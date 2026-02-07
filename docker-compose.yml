@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgis/postgis:15-3.4
+    environment:
+      POSTGRES_DB: vrisa
+      POSTGRES_USER: vrisa
+      POSTGRES_PASSWORD: vrisa
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    environment:
+      POSTGRES_DB: vrisa
+      POSTGRES_USER: vrisa
+      POSTGRES_PASSWORD: vrisa
+      POSTGRES_HOST: db
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: "dev-secret-key"
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "python manage.py migrate &&
+      python manage.py seed_demo &&
+      python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - db
+
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: npm install && npm run dev
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
